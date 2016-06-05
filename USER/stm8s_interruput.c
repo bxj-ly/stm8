@@ -15,7 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
+#include "main.h"
+u8 data_point = 0;
 
 #pragma vector=1
 __interrupt void TRAP_IRQHandler(void)
@@ -85,7 +86,18 @@ __interrupt void CAN_TX_IRQHandler(void)
 #pragma vector=0xC
 __interrupt void SPI_IRQHandler(void)
 {
-  
+    if(SPI_GetITStatus(SPI_IT_TXE) != RESET){
+        SPI_SendData(data[data_point]);
+        SPI_ClearITPendingBit(SPI_IT_TXE); 
+    }
+
+    if(SPI_GetITStatus(SPI_IT_RXNE) != RESET){
+        data_point = SPI_ReceiveData();
+        if(data_point >= BufferSize) data_point = BufferSize - 1;
+        SPI_ClearITPendingBit(SPI_IT_RXNE); 
+    }
+
+   
 }
 #pragma vector=0xD
 __interrupt void TIM1_UPD_OVF_TRG_BRK_IRQHandler(void)

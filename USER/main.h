@@ -22,8 +22,11 @@
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __MAIN_H__
 #define __MAIN_H__
+#include "stm8s.h"
 
 
+#define  BufferSize 64
+extern u8 data[BufferSize];
 
 
 #endif /* __MAIN_H__ */

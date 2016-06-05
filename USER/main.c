@@ -16,15 +16,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "stm8s.h"
+
 #include "stm8s_clk.h"
 #include "uart.h"
 #include "spi.h"
 #include "nmealib.h"
+#include "main.h"
 
-
-
-#define  BufferSize 64
 
 u8 Rx_Buffer[BufferSize];
 u8 data[BufferSize];
