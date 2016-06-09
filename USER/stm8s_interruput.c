@@ -16,7 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "main.h"
-u8 data_point = 0;
+u8 spi_cmd = 0;
 
 #pragma vector=1
 __interrupt void TRAP_IRQHandler(void)
@@ -86,14 +86,20 @@ __interrupt void CAN_TX_IRQHandler(void)
 #pragma vector=0xC
 __interrupt void SPI_IRQHandler(void)
 {
+    static u8 cnt = 0;
     if(SPI_GetITStatus(SPI_IT_TXE) != RESET){
-        SPI_SendData(data[data_point]);
+        if(spi_cmd == 0xff)
+            SPI_SendData(cnt);
+        else if((spi_cmd & 0xc0) == 0x40)
+            SPI_SendData(data[spi_cmd&0x3f]);
+        else
+            SPI_SendData(0x66);
+        cnt ++;
         SPI_ClearITPendingBit(SPI_IT_TXE); 
     }
 
     if(SPI_GetITStatus(SPI_IT_RXNE) != RESET){
-        data_point = SPI_ReceiveData();
-        if(data_point >= BufferSize) data_point = BufferSize - 1;
+        spi_cmd = SPI_ReceiveData();
         SPI_ClearITPendingBit(SPI_IT_RXNE); 
     }
 
@@ -156,10 +162,10 @@ __interrupt void UART1_TX_IRQHandler(void)
 #pragma vector=0x14
 __interrupt void UART1_RX_IRQHandler(void)
 { 
-  u8 Res;
+
   if(UART1_GetITStatus(UART1_IT_RXNE )!= RESET)  
   {
-    Res =UART1_ReceiveData8();
+    UART1_ReceiveData8();
   }
 }
 #endif

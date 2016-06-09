@@ -101,17 +101,30 @@ void main(void)
 {
   u8 len = 0;
   /* Infinite loop */
-
+  
+  
   CLK_HSIPrescalerConfig(CLK_PRESCALER_HSIDIV1);
+  CLK_HSICmd(ENABLE);
+  CLK_ClockSwitchConfig(CLK_SWITCHMODE_AUTO, CLK_SOURCE_HSI, DISABLE, CLK_CURRENTCLOCKSTATE_DISABLE);
+  CLK_ClockSwitchCmd(ENABLE); 
+
   Uart_Init();
   SPI_Slave_Init();
 
 
-//   __enable_interrupt(); 
-
+   __enable_interrupt(); 
 
    while (1)
    {
+
+
+//    if(SPI_GetFlagStatus(SPI_FLAG_RXNE) != RESET){
+//        data[0] = SPI_ReceiveData();
+//    } 
+//    if(SPI_GetFlagStatus(SPI_FLAG_TXE) != RESET){
+//        SPI_SendData(len++);
+//    }
+
 #if defined(NMEA_PARSE_STUB_TEST)
         len = GPGGA_Getline((u8 *)stubBuff[0]);
         nmea_parse_GGA((u8 *)stubBuff[0], 64, false, data);
