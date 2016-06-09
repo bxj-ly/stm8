@@ -424,45 +424,74 @@ typedef struct _nmeaGPVTG {
 } nmeaGPVTG;
 
 
+//#pragma pack(push) 
+//#pragma pack(1)
 /**
- * Enumeration for the fields names of a nmeaINFO structure.
- * The values are used in the 'present' mask.
+ * time data
+ * 
  */
-typedef enum _nmeaINFO_FIELD {
-  SMASK         = (1ul << 0),  /* 0x00001 */
-  UTCDATE       = (1ul << 1),  /* 0x00002 */
-  UTCTIME       = (1ul << 2),  /* 0x00004 */
-  SIG           = (1ul << 3),  /* 0x00008 */
-  FIX           = (1ul << 4),  /* 0x00010 */
-  PDOP          = (1ul << 5),  /* 0x00020 */
-  HDOP          = (1ul << 6),  /* 0x00040 */
-  VDOP          = (1ul << 7),  /* 0x00080 */
-  LAT           = (1ul << 8),  /* 0x00100 */
-  LON           = (1ul << 9),  /* 0x00200 */
-  ELV           = (1ul << 10), /* 0x00400 */
-  SPEED         = (1ul << 11), /* 0x00800 */
-  TRACK         = (1ul << 12), /* 0x01000 */
-  MTRACK        = (1ul << 13), /* 0x02000 */
-  MAGVAR        = (1ul << 14), /* 0x04000 */
-  SATINUSECOUNT = (1ul << 15), /* 0x08000 */
-  SATINUSE      = (1ul << 16), /* 0x10000 */
-  SATINVIEW     = (1ul << 17), /* 0x20000 */
-  _nmeaINFO_FIELD_LAST = SATINVIEW
-} nmeaINFO_FIELD;
+typedef struct {
+  u8 hour;           /** Hours since midnight - [0,23] */
+  u8 min;            /** Minutes after the hour - [0,59] */
+  u8 sec;            /** Seconds after the minute - [0,59] */
+  u8 secp;           /** Hundredth part of second - [0,99] */
+}nmea_time_t;
+/**
+ * location data
+ * degree minute
+ */
+typedef struct {
+  u8 deg;           /** degree - 0~180 */
+  u8 min;           /** minute of degree - 0-60 */
+  u8 minp1;         /** .xx of minute - 0-100*/
+  u8 minp2;         /** .00xx of minute - 0-100 */
+}nmea_loc_t;
+/**
+ * info data
+ * lat north south ; lon east west; signal quality
+ */
+typedef struct{
+  u8 ns:1;
+  u8 ew:1;
+  u8 signal:3;
+}data_flag_t;
+/**
+ * data
+ * this board needs
+ */
+typedef struct{
+  u16 type;         /** type of data */
+  u16 len;          /** len of this data , here to end */
+  data_flag_t flag; 
+  nmea_time_t time;
+  nmea_loc_t lat;
+  nmea_loc_t lon;
+}data_store_t;
+//#pragma pack(pop)
 
-#define NMEA_INFO_PRESENT_MASK ((_nmeaINFO_FIELD_LAST << 1) - 1)
+#define RESOLVED_GGA_DATA_TYPE          0x3150
 
-#define RESOLVED_GGA_DATA_TYPE          0x0101
+
+/**
+ * Parse info from a string.
+ *
+ * @param attr the string of time info
+ * @param len the length of the string
+ * @param index info the attr index of this line
+ * @param data output struct's point
+ * @return true on success, false otherwise
+ */
+typedef bool (* attr_GGA_handler)(u8 *attr, unsigned int len, u8 index, u8 ** data);
+
 typedef struct {
   u16 type;
   u16 len;
   u8 data[];
 }resolved_data_t;
 
-typedef bool (* attr_GGA_handler)(u8 *attr, unsigned int len, u8 index, u8 ** data);
-
 
 extern bool nmea_parse_GGA(u8 *s, const int len, bool has_checksum, u8 *pack);
+
 
 #ifdef  __cplusplus
 }
