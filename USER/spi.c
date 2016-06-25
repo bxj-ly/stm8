@@ -36,6 +36,7 @@ void SPI_Slave_Init(void)
 	SPI_ITConfig(SPI_IT_TXE ,ENABLE);
     SPI_ITConfig(SPI_IT_RXNE ,ENABLE);
 	SPI_Cmd(ENABLE);
+    SPI_ClearITPendingBit(SPI_IT_RXNE); 
 }
 
 

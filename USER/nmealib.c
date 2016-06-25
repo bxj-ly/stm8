@@ -101,8 +101,9 @@ bool attr_GGA_handler_time(u8 *attr, unsigned int len, u8 index, u8 **data){
  */
 bool attr_GGA_handler_loc(u8 *attr, unsigned int len, u8 index, u8 **data){
   char *tmp = "xxx";
-  tmp[2] = '\0';
   data_store_t * val = (data_store_t *)*data;
+  tmp[2] = '\0';
+  
   if(index == 2){
     if((len != 9 && len != 7) || attr[4] != '.') // format is "ddmm.mmmm" or "ddmm.mm"
       return true;    

@@ -16,7 +16,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "main.h"
+u8 buffer_s = 0;
 u8 spi_cmd = 0;
+extern u8 Rx_Buffer[BufferSize];
+extern u8 RxGGA[BufferSize];
+extern u8 DataP[BufferSize];
+extern u8 DataQ[BufferSize];
+extern u8 * getGetData();
 
 #pragma vector=1
 __interrupt void TRAP_IRQHandler(void)
@@ -87,23 +93,47 @@ __interrupt void CAN_TX_IRQHandler(void)
 __interrupt void SPI_IRQHandler(void)
 {
     static u8 cnt = 0;
-    if(SPI_GetITStatus(SPI_IT_TXE) != RESET){
-        if(spi_cmd == 0xff)
-            SPI_SendData(cnt);
-        else if((spi_cmd & 0xc0) == 0x40)
-            SPI_SendData(data[spi_cmd&0x3f]);
-        else
-            SPI_SendData(0x66);
-        cnt ++;
-        SPI_ClearITPendingBit(SPI_IT_TXE); 
-    }
+    u8 * data = getGetData();
+
 
     if(SPI_GetITStatus(SPI_IT_RXNE) != RESET){
         spi_cmd = SPI_ReceiveData();
         SPI_ClearITPendingBit(SPI_IT_RXNE); 
     }
 
-   
+    if(SPI_GetITStatus(SPI_IT_TXE) != RESET){
+        if(spi_cmd == 0xff)
+            SPI_SendData(cnt);
+        else if((spi_cmd & 0xc0) == 0x40)
+            SPI_SendData(data[spi_cmd&0x3f]);
+        else if((spi_cmd & 0xc0) == 0x80)
+        {
+            switch(buffer_s)
+            {
+            case 0:
+              SPI_SendData(Rx_Buffer[spi_cmd&0x3f]);
+              break;
+            case 1:
+              SPI_SendData(RxGGA[spi_cmd&0x3f]);
+              break;
+            case 2:
+              SPI_SendData(DataP[spi_cmd&0x3f]);
+              break;
+            case 3:
+              SPI_SendData(DataQ[spi_cmd&0x3f]);
+              break;            
+            default:
+              SPI_SendData(Rx_Buffer[spi_cmd&0x3f]);
+              break;
+            }
+        }
+        else if((spi_cmd & 0xf0) == 0x30)
+            buffer_s = spi_cmd & 0xf;
+        else
+            SPI_SendData(0x66);
+        cnt ++;
+        SPI_ClearITPendingBit(SPI_IT_TXE); 
+    }  
 }
 #pragma vector=0xD
 __interrupt void TIM1_UPD_OVF_TRG_BRK_IRQHandler(void)

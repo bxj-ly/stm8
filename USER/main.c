@@ -22,11 +22,32 @@
 #include "spi.h"
 #include "nmealib.h"
 #include "main.h"
+#include<string.h>
 
 
 u8 Rx_Buffer[BufferSize];
-u8 data[BufferSize];
+u8 RxGGA[BufferSize];
+u8 DataP[BufferSize];
+u8 DataQ[BufferSize];
+u8 DataSelect = 0;
 
+void changePutData(){
+    DataSelect = (DataSelect == 0)? 1:0;
+}
+u8 * getPutData()
+{
+    if(DataSelect == 0)
+        return DataP;
+    else
+        return DataQ;
+}
+u8 * getGetData()
+{
+    if(DataSelect == 0)
+        return DataQ;
+    else
+        return DataP;
+}
 
 void Delay(u32 nCount)
 {
@@ -100,6 +121,7 @@ u8 uart_Getline(u8 buf[]){
 void main(void)
 {
   u8 len = 0;
+  u8 * data;
   /* Infinite loop */
   
   
@@ -118,19 +140,21 @@ void main(void)
    {
 
 
-//    if(SPI_GetFlagStatus(SPI_FLAG_RXNE) != RESET){
-//        data[0] = SPI_ReceiveData();
-//    } 
-//    if(SPI_GetFlagStatus(SPI_FLAG_TXE) != RESET){
-//        SPI_SendData(len++);
-//    }
 
 #if defined(NMEA_PARSE_STUB_TEST)
         len = GPGGA_Getline((u8 *)stubBuff[0]);
+        data = getPutData();
         nmea_parse_GGA((u8 *)stubBuff[0], 64, false, data);
+        changePutData();
 #else   /*defined(NMEA_PARSE_STUB_TEST)*/ 
         len = uart_Getline(Rx_Buffer);
-        nmea_parse_GGA(Rx_Buffer, len, false, data);
+        data = getPutData();
+        if(nmea_parse_GGA(Rx_Buffer, len, false, data))
+        {
+            memcpy(RxGGA, Rx_Buffer, len);
+            changePutData();
+        }
+        
 #endif        
         Delay(0x00ff);
 
