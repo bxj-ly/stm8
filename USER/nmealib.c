@@ -67,8 +67,9 @@ int nmea_calc_crc(const char *s, const int len) {
  * @return true on success, false otherwise
  */
 bool attr_GGA_handler_time(u8 *attr, unsigned int len, u8 index, u8 **data){
-  char *tmp = "xx";
+  char tmp[3];
   data_store_t * val = (data_store_t *)*data;
+  tmp[2] = '\0';
   if(len < 6  ||  (len >= 7 && attr[6] != '.')) // format is "hhmmss.ss" or "hhmmss" ,"hhmmss.s" , "hhmmss.sss"
     return true;
   tmp[0] = attr[0];
@@ -100,9 +101,10 @@ bool attr_GGA_handler_time(u8 *attr, unsigned int len, u8 index, u8 **data){
  * @return true on success, false otherwise
  */
 bool attr_GGA_handler_loc(u8 *attr, unsigned int len, u8 index, u8 **data){
-  char *tmp = "xxx";
+  char tmp[4];
   data_store_t * val = (data_store_t *)*data;
   tmp[2] = '\0';
+  tmp[3] = '\0';
   
   if(index == 2){
     if((len != 9 && len != 7) || attr[4] != '.') // format is "ddmm.mmmm" or "ddmm.mm"
@@ -194,25 +196,13 @@ bool attr_GGA_handler_NSEW(u8 *attr, unsigned int len, u8 index, u8 **data){
 
   else if (index == 3) {
     if ((dir == 'N') || (dir == 'S')) {
-#if defined(RESOLVED_DATA_TYPE)      
-      *ret=dir;
-      ret ++;
-      *data = ret;
-#else
       ((data_store_t *)ret)->flag.ns = (dir == 'N')?1:0;
-#endif      
     }
       return true;
   } 
   else  if(index == 5){
     if ((dir == 'E') || (dir == 'W')) {
-#if defined(RESOLVED_DATA_TYPE)      
-      *ret=dir;
-      ret ++;
-      *data = ret;
-#else
-      ((data_store_t *)ret)->flag.ew = (dir == 'E')?1:0;
-#endif  
+      ((data_store_t *)ret)->flag.ew = (dir == 'E')?1:0;  
     }
     return true;
   }
@@ -233,11 +223,9 @@ bool attr_GGA_handler_header(u8 *attr, unsigned int len, u8 index, u8 **data){
   u8 header[] = "$GPGGA";
   if(0 != memcmp(attr, header, strlen((char const *)header)))
     return false;
-#if ! defined(RESOLVED_DATA_TYPE)
   ((data_store_t *)*data)->type = RESOLVED_GGA_DATA_TYPE;
   ((data_store_t *)*data)->len = sizeof(data_store_t) - sizeof(((data_store_t *)*data)->type)\
       - sizeof(((data_store_t *)*data)->len);  
-#endif  
   return true;
 }
 
@@ -299,7 +287,7 @@ bool attr_GGA_handler_none(u8 *attr, unsigned int len, u8 index, u8 **data){
 * 14. Differential reference station ID, 0000-1023
 * 15. Checksum
 **/
-
+#if defined(NEED_RESOLVE_INFO)
 attr_GGA_handler attr_GGA_handler_list[]={
   attr_GGA_handler_header,    //0 header
   attr_GGA_handler_time,      //1 utc
@@ -312,12 +300,21 @@ attr_GGA_handler attr_GGA_handler_list[]={
   attr_GGA_handler_none,      //8 precision of hori 
   attr_GGA_handler_none,      //9
   attr_GGA_handler_none,      //10
-
 };
+#else //defined(NEED_RESOLVE_INFO)
+attr_GGA_handler attr_GGA_handler_list[]={
+  attr_GGA_handler_header,    //0 header
+};
+#endif //defined(NEED_RESOLVE_INFO)
 
 
-bool parse_attr_GGA (u8 *attr, unsigned int len, u8 index, u8 **data){
-  if(index >= sizeof(attr_GGA_handler_list)/sizeof(attr_GGA_handler))
+static inline size_t get_GGA_handler_list_len(void){
+  return sizeof(attr_GGA_handler_list)/sizeof(attr_GGA_handler);
+}
+
+
+static inline bool parse_attr_GGA (u8 *attr, unsigned int len, u8 index, u8 **data){
+  if(index >= get_GGA_handler_list_len())
     return false;
   return attr_GGA_handler_list[index](attr, len, index, data);
 }
@@ -330,20 +327,13 @@ bool nmea_parse_GGA(u8 *s, const int len, bool has_checksum, u8 *pack){
   u8 * attr = (u8 *)s;
   u8 * data = pack;
 
-#if defined(RESOLVED_DATA_TYPE)
-
-  ((resolved_data_t *)data)->type = RESOLVED_GGA_DATA_TYPE; 
-  ((resolved_data_t *)data)->len = 0;     // length
-  data =  ((resolved_data_t *)data)->data;
-#else
-
   ((data_store_t *)data)->type = 0;
   ((data_store_t *)data)->len = 0;
-#endif
+
 
   while (p && (p-(u8 *)s) < len 
     && p[0] != '\0' && p[0] != '\r' && p[0] != '\n'
-    && attrIndex < sizeof(attr_GGA_handler_list)
+    && attrIndex < get_GGA_handler_list_len()
     ){
         
     if(p[0] == ','){
@@ -357,19 +347,12 @@ bool nmea_parse_GGA(u8 *s, const int len, bool has_checksum, u8 *pack){
       p++;
   }
 
-#if defined(RESOLVED_DATA_TYPE)
-  if(data <= ((resolved_data_t *)pack)->data){ 
-      return false; // <4 haven't get datas
-  }else{
-    ((resolved_data_t *)pack)->len = data -  ((resolved_data_t *)pack)->data;
-    return true;
-  }
-#else
+
   if(((data_store_t *)data)->type != 0)
     return true;
   else
     return false;
-#endif  
+ 
 }
 
 

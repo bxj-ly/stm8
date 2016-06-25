@@ -26,7 +26,14 @@
 
 
 u8 Rx_Buffer[BufferSize];
+#if defined(NEED_RESOLVE_INFO)
 u8 RxGGA[BufferSize];
+#endif //defined(NEED_RESOLVE_INFO)
+
+/**
+ *  PQ Buffer solution
+ *
+ */
 u8 DataP[BufferSize];
 u8 DataQ[BufferSize];
 u8 DataSelect = 0;
@@ -41,7 +48,7 @@ u8 * getPutData()
     else
         return DataQ;
 }
-u8 * getGetData()
+u8 * getDataBuf()
 {
     if(DataSelect == 0)
         return DataQ;
@@ -49,6 +56,12 @@ u8 * getGetData()
         return DataP;
 }
 
+
+
+
+/**
+* Delay
+*/
 void Delay(u32 nCount)
 {
   /* Decrement nCount value */
@@ -144,19 +157,24 @@ void main(void)
 #if defined(NMEA_PARSE_STUB_TEST)
         len = GPGGA_Getline((u8 *)stubBuff[0]);
         data = getPutData();
-        nmea_parse_GGA((u8 *)stubBuff[0], 64, false, data);
+        nmea_parse_GGA((u8 *)stubBuff2[0], BufferSize, false, data);
         changePutData();
 #else   /*defined(NMEA_PARSE_STUB_TEST)*/ 
         len = uart_Getline(Rx_Buffer);
         data = getPutData();
-        if(nmea_parse_GGA(Rx_Buffer, len, false, data))
-        {
-            memcpy(RxGGA, Rx_Buffer, len);
-            changePutData();
+        if(nmea_parse_GGA(Rx_Buffer, len, false, data)){
+  #if defined(NEED_RESOLVE_INFO)
+          memset(RxGGA, 0x00, sizeof(RxGGA));     
+          memcpy(RxGGA, Rx_Buffer, len);
+  #else //defined(NEED_RESOLVE_INFO)
+          memset(data, 0x00, sizeof(data)); 
+          memcpy(data, Rx_Buffer, len);
+  #endif //defined(NEED_RESOLVE_INFO)
+          changePutData();          
         }
-        
+
 #endif        
-        Delay(0x00ff);
+        //Delay(0x00ff);
 
    }
   

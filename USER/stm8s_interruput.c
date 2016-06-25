@@ -19,10 +19,9 @@
 u8 buffer_s = 0;
 u8 spi_cmd = 0;
 extern u8 Rx_Buffer[BufferSize];
-extern u8 RxGGA[BufferSize];
 extern u8 DataP[BufferSize];
 extern u8 DataQ[BufferSize];
-extern u8 * getGetData();
+extern u8 * getDataBuf();
 
 #pragma vector=1
 __interrupt void TRAP_IRQHandler(void)
@@ -93,14 +92,12 @@ __interrupt void CAN_TX_IRQHandler(void)
 __interrupt void SPI_IRQHandler(void)
 {
     static u8 cnt = 0;
-    u8 * data = getGetData();
-
-
+    u8 * data = getDataBuf();
+    
     if(SPI_GetITStatus(SPI_IT_RXNE) != RESET){
         spi_cmd = SPI_ReceiveData();
         SPI_ClearITPendingBit(SPI_IT_RXNE); 
-    }
-
+    }    
     if(SPI_GetITStatus(SPI_IT_TXE) != RESET){
         if(spi_cmd == 0xff)
             SPI_SendData(cnt);
@@ -113,9 +110,11 @@ __interrupt void SPI_IRQHandler(void)
             case 0:
               SPI_SendData(Rx_Buffer[spi_cmd&0x3f]);
               break;
+#if defined(NEED_RESOLVE_INFO)             
             case 1:
               SPI_SendData(RxGGA[spi_cmd&0x3f]);
               break;
+#endif // defined(NEED_RESOLVE_INFO)              
             case 2:
               SPI_SendData(DataP[spi_cmd&0x3f]);
               break;
@@ -123,7 +122,7 @@ __interrupt void SPI_IRQHandler(void)
               SPI_SendData(DataQ[spi_cmd&0x3f]);
               break;            
             default:
-              SPI_SendData(Rx_Buffer[spi_cmd&0x3f]);
+              SPI_SendData(data[spi_cmd&0x3f]);
               break;
             }
         }
@@ -133,7 +132,7 @@ __interrupt void SPI_IRQHandler(void)
             SPI_SendData(0x66);
         cnt ++;
         SPI_ClearITPendingBit(SPI_IT_TXE); 
-    }  
+    }
 }
 #pragma vector=0xD
 __interrupt void TIM1_UPD_OVF_TRG_BRK_IRQHandler(void)

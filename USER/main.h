@@ -25,7 +25,7 @@
 #include "stm8s.h"
 
 
-#define  BufferSize 64
+#define  BufferSize 80
 extern u8 data[BufferSize];
 
 
