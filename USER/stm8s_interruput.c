@@ -128,7 +128,7 @@ __interrupt void SPI_IRQHandler(void)
         }
         else if((spi_cmd & 0xf0) == 0x30)
             buffer_s = spi_cmd & 0xf;
-        else if((spi_cmd & 0xfc) == 0x34)
+        else if((spi_cmd & 0xfc) == 0x14)
         {
             switch(spi_cmd & 0x03)
             {
