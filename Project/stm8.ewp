@@ -1573,6 +1573,9 @@
   <group>
     <name>FWlib</name>
     <file>
+      <name>$PROJ_DIR$\..\FWlib\src\stm8s_beep.c</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\..\FWlib\src\stm8s_clk.c</name>
     </file>
     <file>

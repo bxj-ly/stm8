@@ -128,6 +128,38 @@ __interrupt void SPI_IRQHandler(void)
         }
         else if((spi_cmd & 0xf0) == 0x30)
             buffer_s = spi_cmd & 0xf;
+        else if((spi_cmd & 0xfc) == 0x34)
+        {
+            switch(spi_cmd & 0x03)
+            {
+            case 0:
+              BEEP_Cmd(DISABLE);
+              SPI_SendData(spi_cmd);
+              break;           
+            case 1:
+              BEEP_DeInit();
+              BEEP_Init(BEEP_FREQUENCY_1KHZ);
+              BEEP_Cmd(ENABLE);              
+              SPI_SendData(spi_cmd);
+              break;             
+            case 2:
+              BEEP_DeInit();
+              BEEP_Init(BEEP_FREQUENCY_2KHZ);
+              BEEP_Cmd(ENABLE);                  
+              SPI_SendData(spi_cmd);
+              break;
+            case 3:
+              BEEP_DeInit();
+              BEEP_Init(BEEP_FREQUENCY_4KHZ);
+              BEEP_Cmd(ENABLE);                  
+              SPI_SendData(spi_cmd);
+              break;            
+            default:
+              BEEP_Cmd(DISABLE);
+              SPI_SendData(data[spi_cmd]);
+              break;
+            }            
+        }
         else
             SPI_SendData(0x66);
         cnt ++;

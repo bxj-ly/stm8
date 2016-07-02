@@ -146,6 +146,8 @@ void main(void)
   Uart_Init();
   SPI_Slave_Init();
 
+  BEEP_Init(BEEP_FREQUENCY_4KHZ);
+  BEEP_Cmd(DISABLE);
 
    __enable_interrupt(); 
 
